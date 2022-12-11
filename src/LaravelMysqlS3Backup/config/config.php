@@ -9,13 +9,13 @@ return [
      * to a specified bucket
      */
     's3' => [
-        'key'    => env('AWS_API_KEY'),
-        'secret' => env('AWS_API_SECRET'),
-        'bucket' => env('AWS_S3_BUCKET'),
-        'region' => env('AWS_S3_REGION'),
-        'endpoint' => env('AWS_ENDPOINT'),
-        'folder' => env('BACKUP_FOLDER'),
-        'use_path_style_endpoint' => env('USE_PATH_STYLE_ENDPOINT', false),
+        'key'    => env('MYSQL_S3_BACKUP_AWS_API_KEY'),
+        'secret' => env('MYSQL_S3_BACKUP_AWS_API_SECRET'),
+        'bucket' => env('MYSQL_S3_BACKUP_AWS_S3_BUCKET'),
+        'region' => env('MYSQL_S3_BACKUP_AWS_S3_REGION'),
+        'endpoint' => env('MYSQL_S3_BACKUP_AWS_ENDPOINT'),
+        'folder' => env('MYSQL_S3_BACKUP_FOLDER'),
+        'use_path_style_endpoint' => env('MYSQL_S3_BACKUP_USE_PATH_STYLE_ENDPOINT', false),
     ],
 
     /*
@@ -36,10 +36,15 @@ return [
     /*
      * Where to store the backup file locally
      */
-    'backup_dir' => '/tmp',
+    'backup_dir' => env('MYSQL_S3_BACKUP_LOCAL_DIR', '/tmp'),
+
+    /*
+     * Configure whether scheduler is enabled
+     */
+    'scheduler_enabled' => env('MYSQL_S3_BACKUP_SCHEDULER_ENABLED', false),
 
     /*
      * Scheduler backup job cron time
      */
-    'scheduler_cron' => '42 2 * * *',
+    'scheduler_cron' => env('MYSQL_S3_BACKUP_SCHEDULER_CRON', '10 0 * * *'),
 ];

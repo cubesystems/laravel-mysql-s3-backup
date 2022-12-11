@@ -38,16 +38,16 @@ class MysqlS3Backup extends Command
             escapeshellarg(config('database.connections.mysql.password'))
         );
 
-        if (config('laravel-mysql-s3-backup.custom_mysqldump_args')) {
-            $cmd .= ' ' . config('laravel-mysql-s3-backup.custom_mysqldump_args');
+        if (config('mysql-s3-backup.custom_mysqldump_args')) {
+            $cmd .= ' ' . config('mysql-s3-backup.custom_mysqldump_args');
         }
 
         $cmd .= ' ' . escapeshellarg(config('database.connections.mysql.database'));
 
-        $fileName = config('laravel-mysql-s3-backup.backup_dir') . '/' . sprintf(config('laravel-mysql-s3-backup.filename'), date('Ymd-His'));
+        $fileName = config('mysql-s3-backup.backup_dir') . '/' . sprintf(config('mysql-s3-backup.filename'), date('Ymd-His'));
 
         // Handle gzip
-        if (config('laravel-mysql-s3-backup.gzip')) {
+        if (config('mysql-s3-backup.gzip')) {
             $fileName .= '.gz';
             $cmd .= sprintf(' | gzip > %s', escapeshellarg($fileName));
         } else {
@@ -64,7 +64,7 @@ class MysqlS3Backup extends Command
         }
 
         $process = Process::fromShellCommandline('bash -o pipefail -c "' . $cmd . '"');
-        $process->setTimeout(config('laravel-mysql-s3-backup.sql_timeout'));
+        $process->setTimeout(config('mysql-s3-backup.sql_timeout'));
         $process->run();
 
         if (!$process->isSuccessful()) {
@@ -78,19 +78,19 @@ class MysqlS3Backup extends Command
         // Upload to S3
         $s3 = new S3Client([
             'credentials' => [
-                'key' => config('laravel-mysql-s3-backup.s3.key'),
-                'secret' => config('laravel-mysql-s3-backup.s3.secret'),
+                'key' => config('mysql-s3-backup.s3.key'),
+                'secret' => config('mysql-s3-backup.s3.secret'),
             ],
-            'endpoint' => config('laravel-mysql-s3-backup.s3.endpoint'),
-            'region' => config('laravel-mysql-s3-backup.s3.region'),
+            'endpoint' => config('mysql-s3-backup.s3.endpoint'),
+            'region' => config('mysql-s3-backup.s3.region'),
             'version' => 'latest',
-            'use_path_style_endpoint' => config('laravel-mysql-s3-backup.s3.use_path_style_endpoint'),
+            'use_path_style_endpoint' => config('mysql-s3-backup.s3.use_path_style_endpoint'),
         ]);
 
-        $bucket = config('laravel-mysql-s3-backup.s3.bucket');
+        $bucket = config('mysql-s3-backup.s3.bucket');
         $key = basename($fileName);
 
-        if ($folder = config('laravel-mysql-s3-backup.s3.folder')) {
+        if ($folder = config('mysql-s3-backup.s3.folder')) {
             $key = $folder . '/' . $key;
         }
 
