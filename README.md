@@ -10,7 +10,7 @@ This package is very opinionated. Other backup scripts can support other databas
 1. Install package
 
     ```
-    composer require ayles-software/laravel-mysql-s3-backup
+    composer require cubesystems/laravel-mysql-s3-backup
     ```
 
 2. Publish and edit the config
