@@ -2,11 +2,11 @@
 
 namespace LaravelMysqlS3Backup;
 
-use Aws\S3\S3Client;
 use Aws\S3\MultipartUploader;
+use Aws\S3\S3Client;
 use Illuminate\Console\Command;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
-use Aws\Exception\MultipartUploadException;
 
 class MysqlS3Backup extends Command
 {
@@ -39,12 +39,12 @@ class MysqlS3Backup extends Command
         );
 
         if (config('laravel-mysql-s3-backup.custom_mysqldump_args')) {
-            $cmd .= ' '.config('laravel-mysql-s3-backup.custom_mysqldump_args');
+            $cmd .= ' ' . config('laravel-mysql-s3-backup.custom_mysqldump_args');
         }
 
-        $cmd .= ' '.escapeshellarg(config('database.connections.mysql.database'));
+        $cmd .= ' ' . escapeshellarg(config('database.connections.mysql.database'));
 
-        $fileName = config('laravel-mysql-s3-backup.backup_dir').'/'.sprintf(config('laravel-mysql-s3-backup.filename'), date('Ymd-His'));
+        $fileName = config('laravel-mysql-s3-backup.backup_dir') . '/' . sprintf(config('laravel-mysql-s3-backup.filename'), date('Ymd-His'));
 
         // Handle gzip
         if (config('laravel-mysql-s3-backup.gzip')) {
@@ -55,31 +55,20 @@ class MysqlS3Backup extends Command
         }
 
         if ($this->output->isVerbose()) {
-            $this->output->writeln('Running backup for database `'.config('database.connections.mysql.database').'`');
-            $this->output->writeln('Saving to '.$fileName);
+            $this->output->writeln('Running backup for database `' . config('database.connections.mysql.database') . '`');
+            $this->output->writeln('Saving to ' . $fileName);
         }
 
         if ($this->output->isDebug()) {
             $this->output->writeln("Running command: {$cmd}");
         }
 
-        $process = Process::fromShellCommandline($cmd);
-        $process->setTimeout(config('laravel-mysql-s3-backup.sql_timout'));
+        $process = Process::fromShellCommandline('bash -o pipefail -c "' . $cmd . '"');
+        $process->setTimeout(config('laravel-mysql-s3-backup.sql_timeout'));
         $process->run();
 
-        if (! $process->isSuccessful()) {
-            $this->error($process->getErrorOutput());
-
-            if ($this->output->isVerbose()) {
-                $this->output->writeln(sprintf(
-                    'Unable to dump database for %s with a file name of %. Error: %s',
-                    now()->toDateString(),
-                    $fileName,
-                    $process->getErrorOutput()
-                ));
-            }
-
-            return;
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
         }
 
         if ($this->output->isVerbose()) {
@@ -116,35 +105,12 @@ class MysqlS3Backup extends Command
 
         try {
             $uploader->upload();
-        } catch (MultipartUploadException $e) {
-            if ($this->output->isVerbose()) {
-                $this->output->writeln(sprintf(
-                    'Unable to upload "%s" backup to s3. Error: %s',
-                    $fileName,
-                    $e->getMessage()
-                ));
-            }
-        }
-
-        // Delete the local tmp file
-        if (! config('laravel-mysql-s3-backup.keep_local_copy')) {
-            if ($this->output->isVerbose()) {
-                $this->output->writeln("Deleting local backup file {$fileName}");
-            }
-
+        } finally {
             unlink($fileName);
         }
 
         if ($this->output->isVerbose()) {
             $this->output->writeln("Backup {$fileName} successfully uploaded to s3");
-        }
-
-        if (config('laravel-mysql-s3-backup.rolling_backup_days')) {
-            if ($this->output->isVerbose()) {
-                $this->output->writeln("Trimming {$bucket} have have only ".config('laravel-mysql-s3-backup.rolling_backup_days').' days of backups');
-            }
-
-            S3BackupTrimmer::make(config('laravel-mysql-s3-backup.rolling_backup_days'), $bucket)->run();
         }
     }
 }

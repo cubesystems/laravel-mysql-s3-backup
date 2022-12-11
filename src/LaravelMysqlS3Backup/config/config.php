@@ -24,19 +24,14 @@ return [
     'custom_mysqldump_args' => null,
 
     /*
-     * Whether to gzip the .sql file
-     */
-    'gzip' => true,
-
-    /*
      * Time allowed to run backup
      */
-    'sql_timout' => 7200, // 2 hours
+    'sql_timeout' => 7200, // 2 hours
 
     /*
      * Backup filename
      */
-    'filename' => Str::slug(env('APP_NAME')).'backup-%s.sql',
+    'filename' => Str::slug(env('APP_NAME')) . '-' . env('APP_ENV') . '-' . env('DB_DATABASE') . '-backup-%s.sql',
 
     /*
      * Where to store the backup file locally
@@ -44,14 +39,7 @@ return [
     'backup_dir' => '/tmp',
 
     /*
-     * Do you want to keep a copy of it or delete it
-     * after it's been uploaded?
+     * Scheduler backup job cron time
      */
-    'keep_local_copy' => false,
-
-    /*
-     * Do you want to keep a rolling number of
-     * backups on S3? How many days worth?
-     */
-    'rolling_backup_days' => 14,
+    'scheduler_cron' => '42 2 * * *',
 ];
