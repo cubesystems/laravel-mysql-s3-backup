@@ -21,7 +21,7 @@ return [
     /*
      * Want to add some custom mysqldump args?
      */
-    'custom_mysqldump_args' => null,
+    'custom_mysqldump_args' => env('MYSQL_S3_BACKUP_CUSTOM_MYSQLDUMP_ARGS'),
 
     /*
      * Time allowed to run backup
